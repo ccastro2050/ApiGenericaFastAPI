@@ -4,7 +4,7 @@ Equivalente a Program.cs en .NET
 """
 
 from fastapi import FastAPI
-from controllers import entidades_router
+from controllers import entidades_controller, diagnostico_controller
 
 # Crear la aplicación FastAPI
 app = FastAPI(
@@ -15,8 +15,9 @@ app = FastAPI(
     redoc_url="/redoc"
 )
 
-# Registrar el router de entidades (equivalente a app.MapControllers())
-app.include_router(entidades_router)
+# Registrar los controladores (equivalente a app.MapControllers())
+app.include_router(entidades_controller)
+app.include_router(diagnostico_controller)
 
 
 @app.get("/", tags=["Diagnóstico"])
