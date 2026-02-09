@@ -4,6 +4,7 @@ Equivalente a Program.cs en .NET
 """
 
 from fastapi import FastAPI
+from controllers import entidades_router
 
 # Crear la aplicación FastAPI
 app = FastAPI(
@@ -14,6 +15,9 @@ app = FastAPI(
     redoc_url="/redoc"
 )
 
+# Registrar el router de entidades (equivalente a app.MapControllers())
+app.include_router(entidades_router)
+
 
 @app.get("/", tags=["Diagnóstico"])
 async def root():
@@ -23,23 +27,3 @@ async def root():
         "version": "1.0.0",
         "documentacion": "/swagger"
     }
-
-
-@app.get("/weatherforecast", tags=["Demo"])
-async def weather_forecast():
-    """Endpoint de demostración (equivalente al template de .NET)."""
-    import random
-    from datetime import date, timedelta
-
-    summaries = ["Freezing", "Bracing", "Chilly", "Cool", "Mild",
-                 "Warm", "Balmy", "Hot", "Sweltering", "Scorching"]
-
-    forecasts = []
-    for i in range(5):
-        forecasts.append({
-            "date": str(date.today() + timedelta(days=i+1)),
-            "temperatureC": random.randint(-20, 55),
-            "summary": random.choice(summaries)
-        })
-
-    return forecasts
