@@ -1,4 +1,19 @@
+# Framework web
 fastapi
 uvicorn
+
+# Configuración
 pydantic-settings
 python-dotenv
+
+# Base de datos - Core
+databases[asyncpg,aiomysql,aiosqlite]
+sqlalchemy
+
+# Drivers de base de datos (async)
+asyncpg
+aiomysql
+aioodbc
+
+# Seguridad
+passlib[bcrypt]
