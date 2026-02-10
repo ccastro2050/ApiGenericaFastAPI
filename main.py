@@ -8,7 +8,8 @@ from controllers import (
     entidades_controller,
     diagnostico_controller,
     autenticacion_controller,
-    consultas_controller
+    consultas_controller,
+    estructuras_controller
 )
 
 # Crear la aplicación FastAPI
@@ -25,6 +26,7 @@ app.include_router(entidades_controller)
 app.include_router(diagnostico_controller)
 app.include_router(autenticacion_controller)
 app.include_router(consultas_controller)
+app.include_router(estructuras_controller)
 
 
 @app.get("/", tags=["Diagnóstico"])
