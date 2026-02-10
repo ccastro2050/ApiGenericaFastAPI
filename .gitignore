@@ -3,8 +3,11 @@ venv/
 env/
 .venv/
 
-# Variables de entorno (contiene secretos)
+# Variables de entorno (contienen secretos)
 .env
+.env.development
+.env.production
+# NOTA: .env.example SÍ se sube (es la plantilla)
 
 # Archivos compilados de Python
 __pycache__/
