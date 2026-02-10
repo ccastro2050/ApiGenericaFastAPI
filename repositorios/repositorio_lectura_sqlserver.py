@@ -15,6 +15,7 @@ from typing import Any
 from datetime import datetime, date, time
 from decimal import Decimal
 from uuid import UUID
+from urllib.parse import quote_plus
 
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncEngine
@@ -45,16 +46,36 @@ class RepositorioLecturaSqlServer(IRepositorioLecturaTabla):
         self._proveedor_conexion = proveedor_conexion
         self._engine: AsyncEngine | None = None
     
+    def _convertir_odbc_a_sqlalchemy(self, cadena_odbc: str) -> str:
+        """
+        Convierte una cadena de conexión ODBC a formato SQLAlchemy URL.
+
+        Ejemplo entrada:
+            Driver={ODBC Driver 17 for SQL Server};Server=(localdb)\\MSSQLLocalDB;Database=mi_bd;...
+
+        Ejemplo salida:
+            mssql+aioodbc:///?odbc_connect=Driver%3D%7BODBC+Driver+17+for+SQL+Server%7D%3B...
+        """
+        # Si ya tiene formato SQLAlchemy, retornar sin cambios
+        if cadena_odbc.startswith("mssql+"):
+            return cadena_odbc
+
+        # URL-encode la cadena ODBC y construir URL de SQLAlchemy
+        cadena_encoded = quote_plus(cadena_odbc)
+        return f"mssql+aioodbc:///?odbc_connect={cadena_encoded}"
+
     async def _obtener_engine(self) -> AsyncEngine:
         """
         Obtiene o crea el engine de SQLAlchemy (lazy initialization).
-        
+
         Returns:
             AsyncEngine configurado para SQL Server
         """
         if self._engine is None:
             cadena = self._proveedor_conexion.obtener_cadena_conexion()
-            self._engine = create_async_engine(cadena, echo=False)
+            # Convertir cadena ODBC a formato SQLAlchemy si es necesario
+            cadena_sqlalchemy = self._convertir_odbc_a_sqlalchemy(cadena)
+            self._engine = create_async_engine(cadena_sqlalchemy, echo=False)
         return self._engine
     
     # =========================================================================

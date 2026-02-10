@@ -59,7 +59,12 @@ class DatabaseSettings(BaseSettings):
 
     Equivalente a ConnectionStrings en appsettings.json
     """
-    model_config = SettingsConfigDict(env_prefix='DB_')
+    model_config = SettingsConfigDict(
+        env_file=get_env_file(),
+        env_file_encoding='utf-8',
+        env_prefix='DB_',
+        extra='ignore'
+    )
 
     # Proveedor activo (equivalente a DatabaseProvider en C#)
     provider: str = Field(
@@ -103,7 +108,12 @@ class JwtSettings(BaseSettings):
 
     Equivalente a sección Jwt en appsettings.json
     """
-    model_config = SettingsConfigDict(env_prefix='JWT_')
+    model_config = SettingsConfigDict(
+        env_file=get_env_file(),
+        env_file_encoding='utf-8',
+        env_prefix='JWT_',
+        extra='ignore'
+    )
 
     key: str = Field(
         default='MySuperSecretKey1234567890!@#$%^&*()_+',
@@ -132,6 +142,12 @@ class SecuritySettings(BaseSettings):
 
     Equivalente a TablasProhibidas en appsettings.json
     """
+    model_config = SettingsConfigDict(
+        env_file=get_env_file(),
+        env_file_encoding='utf-8',
+        extra='ignore'
+    )
+
     tablas_prohibidas: str = Field(
         default='',
         alias='TABLAS_PROHIBIDAS',

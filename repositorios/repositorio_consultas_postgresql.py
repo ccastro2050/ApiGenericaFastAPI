@@ -39,6 +39,17 @@ class RepositorioConsultasPostgreSQL:
             raise ValueError("proveedor_conexion no puede ser None")
         self._proveedor_conexion = proveedor_conexion
 
+    def _normalizar_cadena_asyncpg(self, cadena: str) -> str:
+        """
+        Normaliza la cadena de conexión para asyncpg.
+
+        SQLAlchemy usa: postgresql+asyncpg://...
+        asyncpg espera: postgresql://...
+        """
+        if cadena.startswith("postgresql+asyncpg://"):
+            return cadena.replace("postgresql+asyncpg://", "postgresql://", 1)
+        return cadena
+
     # ================================================================
     # MÉTODO AUXILIAR: Obtiene metadatos de parámetros de un SP en PostgreSQL
     # ================================================================
@@ -158,16 +169,25 @@ class RepositorioConsultasPostgreSQL:
         """
         Convierte el valor al tipo apropiado según los metadatos del parámetro.
         """
+        tipo_lower = tipo.lower()
+
+        # JSON/JSONB - Manejar None especialmente (igual que C# con DBNull.Value)
+        if tipo_lower in ("json", "jsonb"):
+            if valor is None:
+                return None  # PostgreSQL usará DEFAULT
+            if isinstance(valor, (dict, list)):
+                return json.dumps(valor)
+            return str(valor)
+
+        # Para otros tipos, si es None, retornar None
         if valor is None:
             return None
 
-        tipo_lower = tipo.lower()
-
-        # JSON/JSONB
+        # JSON por contenido o nombre (solo si no es None)
         if self._es_json(tipo, nombre_param, valor):
             if isinstance(valor, (dict, list)):
                 return json.dumps(valor)
-            return str(valor) if valor is not None else "{}"
+            return str(valor)
 
         # INTEGER
         if tipo_lower in ("integer", "int", "int4"):
@@ -230,7 +250,9 @@ class RepositorioConsultasPostgreSQL:
         if not nombre_sp or not nombre_sp.strip():
             raise ValueError("El nombre del procedimiento no puede estar vacío.")
 
-        cadena_conexion = self._proveedor_conexion.obtener_cadena_conexion()
+        cadena_conexion = self._normalizar_cadena_asyncpg(
+            self._proveedor_conexion.obtener_cadena_conexion()
+        )
         resultados: list[dict[str, Any]] = []
 
         conexion = await asyncpg.connect(cadena_conexion)
@@ -271,9 +293,9 @@ class RepositorioConsultasPostgreSQL:
                 clave_normalizada = clave[1:] if clave.startswith("@") else clave
                 parametros_normalizados[clave_normalizada.lower()] = valor
 
-            # MEJORA: Incluir parámetros IN e INOUT para la llamada
+            # CORRECCIÓN: Incluir TODOS los parámetros IN e INOUT (igual que C#)
+            # Para los que no tienen valor, se pasa None (que se convertirá según el tipo)
             parametros_entrada = [m for m in metadatos if m[1] in ("IN", "INOUT")]
-            parametros_inout = [m for m in metadatos if m[1] == "INOUT"]
 
             # Construir placeholders ($1, $2, etc.)
             placeholders = ", ".join(f"${i + 1}" for i in range(len(parametros_entrada)))
@@ -298,6 +320,9 @@ class RepositorioConsultasPostgreSQL:
                 valor_convertido = self._convertir_valor_segun_tipo(valor, tipo_param, nombre_param)
                 valores.append(valor_convertido)
 
+            # Detectar si hay parámetros INOUT en los metadatos
+            tiene_inout = any(m[1] == "INOUT" for m in metadatos)
+
             # Ejecutar
             if tipo_rutina == "FUNCTION":
                 # FUNCIÓN: Ejecutar y leer resultado directamente
@@ -306,7 +331,7 @@ class RepositorioConsultasPostgreSQL:
                     fila_dict: dict[str, Any] = dict(row)
                     resultados.append(fila_dict)
 
-            elif parametros_inout:
+            elif tiene_inout:
                 # PROCEDURE CON INOUT: Usar fetch para capturar valores INOUT
                 rows = await conexion.fetch(sql_llamada, *valores)
                 for row in rows:
@@ -347,7 +372,9 @@ class RepositorioConsultasPostgreSQL:
             Lista de diccionarios con los resultados
         """
         resultados: list[dict[str, Any]] = []
-        cadena_conexion = self._proveedor_conexion.obtener_cadena_conexion()
+        cadena_conexion = self._normalizar_cadena_asyncpg(
+            self._proveedor_conexion.obtener_cadena_conexion()
+        )
 
         conexion = await asyncpg.connect(cadena_conexion)
         try:
@@ -403,7 +430,9 @@ class RepositorioConsultasPostgreSQL:
             Tupla (es_valida, mensaje_error)
         """
         try:
-            cadena_conexion = self._proveedor_conexion.obtener_cadena_conexion()
+            cadena_conexion = self._normalizar_cadena_asyncpg(
+            self._proveedor_conexion.obtener_cadena_conexion()
+        )
 
             conexion = await asyncpg.connect(cadena_conexion)
             try:
@@ -444,7 +473,9 @@ class RepositorioConsultasPostgreSQL:
         Si se proporciona un esquema específico, verifica que la tabla exista en ese esquema.
         Si no, busca primero en 'public', luego en cualquier esquema.
         """
-        cadena_conexion = self._proveedor_conexion.obtener_cadena_conexion()
+        cadena_conexion = self._normalizar_cadena_asyncpg(
+            self._proveedor_conexion.obtener_cadena_conexion()
+        )
 
         conexion = await asyncpg.connect(cadena_conexion)
         try:
@@ -482,7 +513,9 @@ class RepositorioConsultasPostgreSQL:
         Incluye: PK, FK, UNIQUE, CHECK, DEFAULT
         """
         resultados: list[dict[str, Any]] = []
-        cadena_conexion = self._proveedor_conexion.obtener_cadena_conexion()
+        cadena_conexion = self._normalizar_cadena_asyncpg(
+            self._proveedor_conexion.obtener_cadena_conexion()
+        )
 
         conexion = await asyncpg.connect(cadena_conexion)
         try:
@@ -574,7 +607,9 @@ class RepositorioConsultasPostgreSQL:
         Obtiene la estructura básica de todas las tablas de la base de datos.
         """
         resultados: list[dict[str, Any]] = []
-        cadena_conexion = self._proveedor_conexion.obtener_cadena_conexion()
+        cadena_conexion = self._normalizar_cadena_asyncpg(
+            self._proveedor_conexion.obtener_cadena_conexion()
+        )
 
         conexion = await asyncpg.connect(cadena_conexion)
         try:
@@ -615,7 +650,9 @@ class RepositorioConsultasPostgreSQL:
         - Extensiones
         """
         resultado: dict[str, Any] = {}
-        cadena_conexion = self._proveedor_conexion.obtener_cadena_conexion()
+        cadena_conexion = self._normalizar_cadena_asyncpg(
+            self._proveedor_conexion.obtener_cadena_conexion()
+        )
 
         conexion = await asyncpg.connect(cadena_conexion)
         try:

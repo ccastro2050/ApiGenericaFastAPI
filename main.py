@@ -147,12 +147,13 @@ app.add_middleware(
 # - C#: builder.Services.AddScoped<IServicio, Servicio>() (registro global)
 # - Python: Depends(obtener_servicio) (registro por endpoint)
 
-app.include_router(entidades_controller)      # CRUD genérico
+# IMPORTANTE: Orden de registro importa. Los routers más específicos van primero.
 app.include_router(diagnostico_controller)    # Health checks
 app.include_router(autenticacion_controller)  # Login/JWT
 app.include_router(consultas_controller)      # Consultas SQL
 app.include_router(estructuras_controller)    # Introspección BD
 app.include_router(procedimientos_controller) # Stored Procedures
+app.include_router(entidades_controller)      # CRUD genérico (al final por tener prefix="/api" genérico)
 
 
 # ================================================================

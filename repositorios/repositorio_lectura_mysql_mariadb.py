@@ -26,23 +26,58 @@ from servicios.utilidades.encriptacion_bcrypt import encriptar
 class RepositorioLecturaMysqlMariaDB(IRepositorioLecturaTabla):
     """
     Implementación del repositorio para MySQL y MariaDB.
-    
+
     Usa SQLAlchemy async con aiomysql para conexiones asíncronas.
     Compatible con MySQL 5.7+, MySQL 8.x, MariaDB 10.x.
     """
-    
+
     def __init__(self, proveedor_conexion: IProveedorConexion):
         if proveedor_conexion is None:
             raise ValueError("proveedor_conexion no puede ser None")
-        
+
         self._proveedor_conexion = proveedor_conexion
         self._engine: AsyncEngine | None = None
-    
+
+    def _convertir_cadena_csharp_a_sqlalchemy(self, cadena: str) -> str:
+        """
+        Convierte una cadena de conexión en formato C# a URL de SQLAlchemy.
+
+        Entrada: Server=localhost;Port=3306;Database=mi_bd;User=root;Password=mysql;
+        Salida:  mysql+aiomysql://root:mysql@localhost:3306/mi_bd
+        """
+        # Si ya es formato URL, retornar tal cual
+        if cadena.startswith("mysql+") or cadena.startswith("mariadb+"):
+            return cadena
+
+        # Parsear formato C# (key=value;key=value;...)
+        partes = {}
+        for segmento in cadena.split(";"):
+            segmento = segmento.strip()
+            if "=" in segmento:
+                clave, valor = segmento.split("=", 1)
+                partes[clave.strip().lower()] = valor.strip()
+
+        # Extraer valores con defaults
+        host = partes.get("server", "localhost")
+        port = partes.get("port", "3306")
+        database = partes.get("database", "")
+        user = partes.get("user", partes.get("uid", "root"))
+        password = partes.get("password", partes.get("pwd", ""))
+
+        # Construir URL de SQLAlchemy
+        if password:
+            url = f"mysql+aiomysql://{user}:{password}@{host}:{port}/{database}"
+        else:
+            url = f"mysql+aiomysql://{user}@{host}:{port}/{database}"
+
+        return url
+
     async def _obtener_engine(self) -> AsyncEngine:
         """Obtiene o crea el engine de SQLAlchemy."""
         if self._engine is None:
             cadena = self._proveedor_conexion.obtener_cadena_conexion()
-            self._engine = create_async_engine(cadena, echo=False)
+            cadena_sqlalchemy = self._convertir_cadena_csharp_a_sqlalchemy(cadena)
+            self._engine = create_async_engine(cadena_sqlalchemy, echo=False)
         return self._engine
     
     # =========================================================================
