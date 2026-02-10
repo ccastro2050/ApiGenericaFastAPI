@@ -4,7 +4,12 @@ Equivalente a Program.cs en .NET
 """
 
 from fastapi import FastAPI
-from controllers import entidades_controller, diagnostico_controller, autenticacion_controller
+from controllers import (
+    entidades_controller,
+    diagnostico_controller,
+    autenticacion_controller,
+    consultas_controller
+)
 
 # Crear la aplicación FastAPI
 app = FastAPI(
@@ -19,6 +24,7 @@ app = FastAPI(
 app.include_router(entidades_controller)
 app.include_router(diagnostico_controller)
 app.include_router(autenticacion_controller)
+app.include_router(consultas_controller)
 
 
 @app.get("/", tags=["Diagnóstico"])
