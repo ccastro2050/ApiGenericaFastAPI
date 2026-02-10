@@ -1,26 +1,49 @@
+# ================================================================
+# requirements.txt — Dependencias del proyecto
+# Equivalente a: packages en .csproj de C#
+#
+# Instalación: pip install -r requirements.txt
+# ================================================================
+
+# ----------------------------------------------------------------
 # Framework web
-fastapi
-uvicorn
+# ----------------------------------------------------------------
+fastapi>=0.100.0
+uvicorn[standard]>=0.22.0
 
+# ----------------------------------------------------------------
 # Configuración
-pydantic-settings
-python-dotenv
+# ----------------------------------------------------------------
+pydantic>=2.0.0
+pydantic-settings>=2.0.0
+python-dotenv>=1.0.0
 
-# Base de datos - Core
-databases[asyncpg,aiomysql,aiosqlite]
-sqlalchemy
+# ----------------------------------------------------------------
+# Autenticación JWT
+# Equivalente a: Microsoft.AspNetCore.Authentication.JwtBearer
+# ----------------------------------------------------------------
+python-jose[cryptography]>=3.3.0
+python-multipart>=0.0.6
 
-# Drivers de base de datos (async)
-asyncpg
-aiomysql
-aioodbc
-
-# Seguridad
-passlib[bcrypt]
+# ----------------------------------------------------------------
+# Seguridad y encriptación
+# ----------------------------------------------------------------
+passlib[bcrypt]>=1.7.4
 bcrypt>=4.0.0
 
-sqlalchemy[asyncio]>=2.0.0
-aioodbc>=0.5.0
-greenlet>=3.0.0
+# ----------------------------------------------------------------
+# Base de datos - Drivers async
+# Equivalente a: Microsoft.Data.SqlClient, Npgsql, MySqlConnector
+# ----------------------------------------------------------------
+# PostgreSQL async
+asyncpg>=0.28.0
 
+# MySQL/MariaDB async
 aiomysql>=0.2.0
+
+# SQL Server async (via ODBC)
+aioodbc>=0.5.0
+
+# SQLAlchemy para queries avanzados (opcional)
+sqlalchemy[asyncio]>=2.0.0
+greenlet>=3.0.0
