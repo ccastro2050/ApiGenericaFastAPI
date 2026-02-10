@@ -40,6 +40,8 @@ class ProveedorConexion:
             "postgres": db_config.postgres,
             "postgresql": db_config.postgres,
             "sqlserver": db_config.sqlserver,
+            "sqlserverexpress": db_config.sqlserverexpress,
+            "localdb": db_config.localdb,
             "mysql": db_config.mysql,
             "mariadb": db_config.mariadb,
         }

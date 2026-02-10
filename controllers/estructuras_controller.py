@@ -48,7 +48,10 @@ def obtener_repositorio_consultas():
         return RepositorioConsultasPostgreSQL(proveedor)
     elif proveedor_actual in ("mysql", "mariadb"):
         return RepositorioConsultasMysqlMariaDB(proveedor)
+    elif proveedor_actual in ("sqlserver", "sqlserverexpress", "localdb"):
+        return RepositorioConsultasSqlServer(proveedor)
     else:
+        # Por defecto, SQL Server
         return RepositorioConsultasSqlServer(proveedor)
 
 

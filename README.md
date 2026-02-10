@@ -200,9 +200,13 @@ Solo modifica el valor de `DB_PROVIDER`:
 | Valor | Base de datos |
 |-------|---------------|
 | `sqlserver` | Microsoft SQL Server |
+| `sqlserverexpress` | SQL Server Express |
+| `localdb` | SQL Server LocalDB (desarrollo) |
 | `postgres` | PostgreSQL |
 | `mysql` | MySQL |
 | `mariadb` | MariaDB |
+
+> **Nota sobre LocalDB**: Es una version ligera de SQL Server para desarrollo. Viene incluida con Visual Studio. No requiere instalar SQL Server completo.
 
 ### Jerarquia de configuracion
 
@@ -217,12 +221,14 @@ Equivalente a `appsettings.json` + `appsettings.Development.json` en C#.
 
 ## Bases de Datos Soportadas
 
-| Base de Datos | Driver Python | Puerto Default |
-|---------------|---------------|----------------|
-| SQL Server | aioodbc | 1433 |
-| PostgreSQL | asyncpg | 5432 |
-| MySQL | aiomysql | 3306 |
-| MariaDB | aiomysql | 3306 |
+| Base de Datos | Driver Python | Puerto Default | Uso |
+|---------------|---------------|----------------|-----|
+| SQL Server | aioodbc | 1433 | Produccion |
+| SQL Server Express | aioodbc | 1433 | Desarrollo/Produccion |
+| SQL Server LocalDB | aioodbc | - | Solo desarrollo |
+| PostgreSQL | asyncpg | 5432 | Produccion |
+| MySQL | aiomysql | 3306 | Produccion |
+| MariaDB | aiomysql | 3306 | Produccion |
 
 ---
 

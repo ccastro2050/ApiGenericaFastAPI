@@ -64,13 +64,21 @@ class DatabaseSettings(BaseSettings):
     # Proveedor activo (equivalente a DatabaseProvider en C#)
     provider: str = Field(
         default='sqlserver',
-        description="Proveedor activo: sqlserver, postgres, mysql, mariadb"
+        description="Proveedor activo: sqlserver, sqlserverexpress, localdb, postgres, mysql, mariadb"
     )
 
     # Cadenas de conexión por proveedor
     sqlserver: str = Field(
         default='',
         description="Cadena de conexión SQL Server"
+    )
+    sqlserverexpress: str = Field(
+        default='',
+        description="Cadena de conexión SQL Server Express"
+    )
+    localdb: str = Field(
+        default='',
+        description="Cadena de conexión SQL Server LocalDB (desarrollo)"
     )
     postgres: str = Field(
         default='',

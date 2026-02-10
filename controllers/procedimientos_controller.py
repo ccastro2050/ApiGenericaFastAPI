@@ -60,6 +60,8 @@ def obtener_servicio_consultas() -> ServicioConsultas:
         repositorio = RepositorioConsultasPostgreSQL(proveedor)
     elif proveedor_actual in ("mysql", "mariadb"):
         repositorio = RepositorioConsultasMysqlMariaDB(proveedor)
+    elif proveedor_actual in ("sqlserver", "sqlserverexpress", "localdb"):
+        repositorio = RepositorioConsultasSqlServer(proveedor)
     else:
         # Por defecto, SQL Server
         repositorio = RepositorioConsultasSqlServer(proveedor)
