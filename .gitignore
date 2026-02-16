@@ -14,8 +14,8 @@ __pycache__/
 *.py[cod]
 *$py.class
 
-# Configuración de VS Code
-.vscode/
+# Configuración de VS Code (se incluye para el tutorial paso a paso)
+# .vscode/
 
 # Archivos de sistema
 .DS_Store

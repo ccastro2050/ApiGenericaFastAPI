@@ -1,0 +1,32 @@
+{
+    // ============================================================
+    // settings.json - Configuración del workspace para VS Code
+    // ============================================================
+    // Configura VS Code específicamente para este proyecto Python.
+    //
+    // En C# (.NET) no se necesita este archivo porque el tipo
+    // de depurador se detecta automáticamente desde el .csproj.
+    //
+    // En Python, VS Code necesita saber:
+    //   - Dónde está el intérprete (venv)
+    //   - Qué framework de testing usar
+    //   - Cómo formatear el código
+    // ============================================================
+
+    // Ruta al intérprete de Python dentro del entorno virtual.
+    // VS Code usa este intérprete para:
+    //   - IntelliSense (autocompletado)
+    //   - Linting (detección de errores)
+    //   - Debug (depuración con F5)
+    //
+    // ${workspaceFolder} = carpeta raíz del proyecto.
+    // "venv" = nombre de la carpeta del entorno virtual.
+    "python.defaultInterpreterPath": "${workspaceFolder}/venv/Scripts/python.exe",
+
+    // Asociar archivos .env como tipo "dotenv" para que
+    // VS Code los resalte con colores correctos.
+    "files.associations": {
+        "*.env": "dotenv",
+        "*.env.*": "dotenv"
+    }
+}

@@ -1,0 +1,109 @@
+{
+    // ============================================================
+    // launch.json - Configuración de Debug (Depuración) en VS Code
+    // ============================================================
+    // Le dice a VS Code CÓMO ejecutar y depurar la aplicación.
+    //
+    // Diferencia con C# (.NET):
+    //   C#:     type = "coreclr"   → depurador de .NET
+    //   Python: type = "debugpy"   → depurador de Python
+    //
+    //   C#:     program = ".dll"   → ejecutable compilado
+    //   Python: module = "uvicorn" → servidor ASGI que ejecuta FastAPI
+    //
+    // Sin este archivo, F5 no sabe cómo iniciar el debugger Python.
+    // ============================================================
+    "version": "0.2.0",
+    "configurations": [
+        {
+            // --------------------------------------------------
+            // Configuración principal: Debug de la API FastAPI
+            // --------------------------------------------------
+
+            // "name": Nombre que aparece en el menú desplegable
+            //         de debug (barra superior de VS Code, junto a F5).
+            "name": "Depurar ApiGenericaFastAPI",
+
+            // "type": Tipo de depurador.
+            //   "debugpy" = depurador oficial de Python para VS Code.
+            //   Equivalente a "coreclr" en C#.
+            //   Permite breakpoints, inspeccionar variables, etc.
+            "type": "debugpy",
+
+            // "request": Modo de inicio.
+            //   "launch" = VS Code INICIA la aplicación.
+            //   "attach" = VS Code se CONECTA a un proceso ya corriendo.
+            "request": "launch",
+
+            // "module": Módulo Python a ejecutar.
+            //   En vez de "program" (archivo .py), usamos "module"
+            //   para ejecutar: python -m uvicorn
+            //   Uvicorn es el servidor ASGI que corre FastAPI.
+            //
+            //   Equivalencia con C#:
+            //     C#:     "program": "ApiGenericaCsharp.dll"
+            //     Python: "module": "uvicorn"
+            "module": "uvicorn",
+
+            // "args": Argumentos para uvicorn.
+            //   "main:app" = archivo main.py, variable app (la instancia FastAPI)
+            //   "--host 0.0.0.0" = escucha en todas las interfaces
+            //   "--port 8000" = puerto del servidor
+            //   "--reload" = reinicia automáticamente al guardar cambios
+            //
+            //   NOTA: NO se usa --reload en debug real porque
+            //   interfiere con los breakpoints. Aquí se omite.
+            "args": [
+                "main:app",
+                "--host", "0.0.0.0",
+                "--port", "8000"
+            ],
+
+            // "jinja": true permite depurar templates Jinja2
+            //   (no aplica aquí, pero no causa problemas).
+            "jinja": true,
+
+            // "justMyCode": false permite entrar (Step Into / F11)
+            //   dentro del código de FastAPI, uvicorn y otras
+            //   librerías. Útil para entender cómo funcionan.
+            //   true = solo depura TU código (más rápido).
+            "justMyCode": true,
+
+            // "cwd": Directorio de trabajo. La API busca .env
+            //   y los módulos relativos desde aquí.
+            "cwd": "${workspaceFolder}",
+
+            // "env": Variables de entorno para la aplicación.
+            //   PYTHONDONTWRITEBYTECODE=1: no genera __pycache__
+            //     durante el debug (menos archivos basura).
+            //
+            //   Equivalencia con C#:
+            //     C#:     "ASPNETCORE_ENVIRONMENT": "Development"
+            //     Python: Se lee desde .env (ENVIRONMENT=development)
+            "env": {
+                "PYTHONDONTWRITEBYTECODE": "1"
+            },
+
+            // "console": Dónde se muestra la salida de la app.
+            //   "integratedTerminal" = terminal integrada de VS Code.
+            //
+            //   Diferencia con C#:
+            //     C#:     "internalConsole" (panel de debug)
+            //     Python: "integratedTerminal" (terminal real)
+            //   Python necesita terminal real para que uvicorn
+            //   muestre los logs correctamente con colores.
+            "console": "integratedTerminal",
+
+            // "serverReadyAction": Cuando uvicorn imprime
+            //   "Uvicorn running on http://0.0.0.0:8000"
+            //   VS Code abre automáticamente el navegador en /swagger.
+            //
+            //   Mismo concepto que en C# launch.json.
+            "serverReadyAction": {
+                "action": "openExternally",
+                "pattern": "Uvicorn running on (http://\\S+)",
+                "uriFormat": "http://localhost:8000/swagger"
+            }
+        }
+    ]
+}
