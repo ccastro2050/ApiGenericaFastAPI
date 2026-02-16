@@ -14,13 +14,7 @@ from typing import Any
 
 from fastapi import APIRouter, HTTPException, Depends, Query
 
-from config import get_settings
-from servicios.conexion.proveedor_conexion import ProveedorConexion
-from repositorios import (
-    RepositorioConsultasSqlServer,
-    RepositorioConsultasPostgreSQL,
-    RepositorioConsultasMysqlMariaDB
-)
+from servicios.fabrica_repositorios import crear_repositorio_consultas
 
 
 # Crear router con prefijo y tags
@@ -34,35 +28,13 @@ logger = logging.getLogger(__name__)
 
 
 # ================================================================
-# DEPENDENCIA: Obtener repositorio de consultas
-# ================================================================
-def obtener_repositorio_consultas():
-    """
-    Crea y retorna el repositorio de consultas apropiado según el proveedor.
-    """
-    settings = get_settings()
-    proveedor = ProveedorConexion(settings)
-    proveedor_actual = proveedor.proveedor_actual
-
-    if proveedor_actual == "postgres":
-        return RepositorioConsultasPostgreSQL(proveedor)
-    elif proveedor_actual in ("mysql", "mariadb"):
-        return RepositorioConsultasMysqlMariaDB(proveedor)
-    elif proveedor_actual in ("sqlserver", "sqlserverexpress", "localdb"):
-        return RepositorioConsultasSqlServer(proveedor)
-    else:
-        # Por defecto, SQL Server
-        return RepositorioConsultasSqlServer(proveedor)
-
-
-# ================================================================
 # ENDPOINT: Obtener modelo/estructura de una tabla
 # ================================================================
 @router.get("/{nombre_tabla}/modelo")
 async def obtener_modelo(
     nombre_tabla: str,
     esquema: str | None = Query(default=None, description="Esquema de la tabla (opcional)"),
-    repositorio = Depends(obtener_repositorio_consultas)
+    repositorio = Depends(crear_repositorio_consultas)
 ):
     """
     Obtiene la estructura detallada de una tabla específica.
@@ -132,7 +104,7 @@ async def obtener_modelo(
 # ================================================================
 @router.get("/basedatos")
 async def obtener_estructura_base_datos(
-    repositorio = Depends(obtener_repositorio_consultas)
+    repositorio = Depends(crear_repositorio_consultas)
 ):
     """
     Obtiene la estructura completa de la base de datos.

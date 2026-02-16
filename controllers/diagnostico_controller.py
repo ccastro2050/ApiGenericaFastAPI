@@ -16,10 +16,7 @@ from datetime import datetime
 from fastapi import APIRouter, HTTPException
 
 from config import get_settings
-from repositorios.repositorio_lectura_sqlserver import RepositorioLecturaSqlServer
-from repositorios.repositorio_lectura_postgresql import RepositorioLecturaPostgreSQL
-from repositorios.repositorio_lectura_mysql_mariadb import RepositorioLecturaMysqlMariaDB
-from servicios.conexion.proveedor_conexion import ProveedorConexion
+from servicios.fabrica_repositorios import crear_repositorio_lectura
 
 
 # Configurar logging (equivalente a ILogger<DiagnosticoController>)
@@ -30,25 +27,6 @@ router = APIRouter(
     prefix="/api/diagnostico",
     tags=["Diagnóstico"]
 )
-
-
-def _obtener_repositorio():
-    """
-    Factory que crea el repositorio según el proveedor configurado.
-    
-    Equivalente a la inyección de dependencias en ASP.NET Core.
-    El contenedor DI en C# resuelve esto automáticamente según DatabaseProvider.
-    """
-    settings = get_settings()
-    proveedor_conexion = ProveedorConexion()
-    proveedor_bd = settings.database.provider.lower()
-    
-    if proveedor_bd == "postgres":
-        return RepositorioLecturaPostgreSQL(proveedor_conexion)
-    elif proveedor_bd in ("mysql", "mariadb"):
-        return RepositorioLecturaMysqlMariaDB(proveedor_conexion)
-    else:  # sqlserver, sqlserverexpress, localdb, o por defecto
-        return RepositorioLecturaSqlServer(proveedor_conexion)
 
 
 @router.get("/conexion")
@@ -87,7 +65,7 @@ async def obtener_diagnostico_conexion():
         proveedor_configurado = settings.database.provider
         
         # OBTENER REPOSITORIO
-        repositorio = _obtener_repositorio()
+        repositorio = crear_repositorio_lectura()
         
         # DELEGACIÓN AL REPOSITORIO (aplicando SRP y DIP)
         # El repositorio inyectado ya es el correcto según DatabaseProvider
@@ -161,7 +139,7 @@ async def obtener_diagnostico_conexion():
 # 2. APLICACIÓN CORRECTA DE DIP:
 #    - Depende de la abstracción (Protocol IRepositorioLecturaTabla)
 #    - No conoce las implementaciones concretas directamente
-#    - El factory _obtener_repositorio() resuelve la implementación correcta
+#    - El factory crear_repositorio_lectura() resuelve la implementación correcta
 #
 # 3. ARQUITECTURA LIMPIA:
 #    diagnostico_controller → IRepositorioLecturaTabla → Implementación específica
@@ -171,8 +149,8 @@ async def obtener_diagnostico_conexion():
 #    - Para agregar soporte a un nuevo motor de BD:
 #      1. Crear repositorio_lectura_nuevo_motor.py : IRepositorioLecturaTabla
 #      2. Implementar obtener_diagnostico_conexion()
-#      3. Agregar case en _obtener_repositorio()
-#      4. Este controlador funciona automáticamente
+#      3. Agregar entrada en los diccionarios de fabrica_repositorios.py
+#      4. Este controlador funciona automáticamente (no se modifica)
 #
 # 5. SIN ACOPLAMIENTO:
 #    - No hay referencias directas a pyodbc, asyncpg, aiomysql

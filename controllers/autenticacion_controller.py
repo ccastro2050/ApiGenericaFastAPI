@@ -20,12 +20,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
 from config import get_settings
-from servicios.servicio_crud import ServicioCrud
-from servicios.politicas.politica_tablas_prohibidas import PoliticaTablasProhibidas
-from repositorios.repositorio_lectura_sqlserver import RepositorioLecturaSqlServer
-from repositorios.repositorio_lectura_postgresql import RepositorioLecturaPostgreSQL
-from repositorios.repositorio_lectura_mysql_mariadb import RepositorioLecturaMysqlMariaDB
-from servicios.conexion.proveedor_conexion import ProveedorConexion
+from servicios.fabrica_repositorios import crear_servicio_crud
 
 
 # Configurar logging (equivalente a ILogger<AutenticacionController>)
@@ -67,26 +62,6 @@ class CredencialesGenericas(BaseModel):
     
     # Contraseña enviada por el usuario (texto plano para comparar con hash en BD)
     contrasena: str = Field(default="")
-
-
-def _obtener_servicio_crud() -> ServicioCrud:
-    """
-    Factory que crea el ServicioCrud con sus dependencias.
-    Equivalente a la inyección de dependencias en ASP.NET Core.
-    """
-    settings = get_settings()
-    proveedor_conexion = ProveedorConexion()
-    proveedor_bd = settings.database.provider.lower()
-    
-    if proveedor_bd == "postgres":
-        repositorio = RepositorioLecturaPostgreSQL(proveedor_conexion)
-    elif proveedor_bd in ("mysql", "mariadb"):
-        repositorio = RepositorioLecturaMysqlMariaDB(proveedor_conexion)
-    else:
-        repositorio = RepositorioLecturaSqlServer(proveedor_conexion)
-    
-    politica_tablas = PoliticaTablasProhibidas()
-    return ServicioCrud(repositorio, politica_tablas)
 
 
 # ---------------------------------------------------------
@@ -137,7 +112,7 @@ async def generar_token(credenciales: CredencialesGenericas):
         )
         
         # OBTENER SERVICIO Y CONFIGURACIÓN
-        servicio = _obtener_servicio_crud()
+        servicio = crear_servicio_crud()
         settings = get_settings()
         
         # -----------------------------------------------------

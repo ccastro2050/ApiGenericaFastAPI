@@ -22,14 +22,8 @@ from datetime import datetime
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 
-from config import get_settings
 from servicios.servicio_consultas import ServicioConsultas
-from servicios.conexion.proveedor_conexion import ProveedorConexion
-from repositorios import (
-    RepositorioConsultasSqlServer,
-    RepositorioConsultasPostgreSQL,
-    RepositorioConsultasMysqlMariaDB
-)
+from servicios.fabrica_repositorios import crear_servicio_consultas
 
 
 # Crear router con prefijo y tags
@@ -62,40 +56,12 @@ class SolicitudConsulta(BaseModel):
 
 
 # ================================================================
-# DEPENDENCIA: Obtener servicio de consultas
-# ================================================================
-def obtener_servicio_consultas() -> ServicioConsultas:
-    """
-    Crea y retorna el servicio de consultas con el repositorio apropiado.
-
-    Esta función actúa como factory para inyección de dependencias.
-    Determina el repositorio a usar según el proveedor configurado.
-    """
-    settings = get_settings()
-    proveedor = ProveedorConexion(settings)
-    proveedor_actual = proveedor.proveedor_actual
-
-    # Seleccionar repositorio según proveedor
-    if proveedor_actual == "postgres":
-        repositorio = RepositorioConsultasPostgreSQL(proveedor)
-    elif proveedor_actual in ("mysql", "mariadb"):
-        repositorio = RepositorioConsultasMysqlMariaDB(proveedor)
-    elif proveedor_actual in ("sqlserver", "sqlserverexpress", "localdb"):
-        repositorio = RepositorioConsultasSqlServer(proveedor)
-    else:
-        # Por defecto, SQL Server
-        repositorio = RepositorioConsultasSqlServer(proveedor)
-
-    return ServicioConsultas(repositorio)
-
-
-# ================================================================
 # ENDPOINT: Ejecutar consulta parametrizada
 # ================================================================
 @router.post("/ejecutarconsultaparametrizada")
 async def ejecutar_consulta_parametrizada(
     solicitud: SolicitudConsulta,
-    servicio: ServicioConsultas = Depends(obtener_servicio_consultas)
+    servicio: ServicioConsultas = Depends(crear_servicio_consultas)
 ):
     """
     Endpoint principal para ejecutar consultas SQL parametrizadas de forma segura.

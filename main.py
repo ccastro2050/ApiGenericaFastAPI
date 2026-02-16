@@ -54,6 +54,24 @@ settings = get_settings()
 
 
 # ================================================================
+# REGISTRO DE DEPENDENCIAS
+# ================================================================
+#
+# Equivalente al switch en Program.cs (C#) líneas 154-194.
+# La fábrica centraliza la selección de proveedor en UN solo lugar.
+# Para agregar un nuevo proveedor, solo se modifica fabrica_repositorios.py.
+#
+# Ver: servicios/fabrica_repositorios.py
+
+from servicios.fabrica_repositorios import (  # noqa: E402
+    crear_repositorio_lectura,
+    crear_repositorio_consultas,
+    crear_servicio_crud,
+    crear_servicio_consultas,
+)
+
+
+# ================================================================
 # CREAR APLICACIÓN FASTAPI
 # ================================================================
 

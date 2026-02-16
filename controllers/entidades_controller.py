@@ -18,13 +18,7 @@ from datetime import datetime
 from fastapi import APIRouter, HTTPException, Query, Response
 from fastapi.responses import JSONResponse
 
-from config import get_settings
-from servicios.servicio_crud import ServicioCrud
-from servicios.politicas.politica_tablas_prohibidas import PoliticaTablasProhibidas
-from repositorios.repositorio_lectura_sqlserver import RepositorioLecturaSqlServer
-from repositorios.repositorio_lectura_postgresql import RepositorioLecturaPostgreSQL
-from repositorios.repositorio_lectura_mysql_mariadb import RepositorioLecturaMysqlMariaDB
-from servicios.conexion.proveedor_conexion import ProveedorConexion
+from servicios.fabrica_repositorios import crear_servicio_crud
 
 
 # Configurar logging (equivalente a ILogger<EntidadesController>)
@@ -35,35 +29,6 @@ router = APIRouter(
     prefix="/api",
     tags=["Entidades"]
 )
-
-
-def _obtener_servicio_crud() -> ServicioCrud:
-    """
-    Factory que crea el ServicioCrud con sus dependencias.
-    
-    Equivalente a la inyección de dependencias automática de ASP.NET Core.
-    En ASP.NET el contenedor DI resuelve esto automáticamente.
-    En FastAPI lo hacemos manualmente o con Depends().
-    
-    CADENA DE DEPENDENCIAS:
-    EntidadesController → ServicioCrud → Repositorio → ProveedorConexion → Settings
-    """
-    settings = get_settings()
-    proveedor_conexion = ProveedorConexion()
-    
-    # Seleccionar repositorio según el proveedor de BD configurado
-    proveedor_bd = settings.database.provider.lower()
-    
-    if proveedor_bd == "postgres":
-        repositorio = RepositorioLecturaPostgreSQL(proveedor_conexion)
-    elif proveedor_bd in ("mysql", "mariadb"):
-        repositorio = RepositorioLecturaMysqlMariaDB(proveedor_conexion)
-    else:  # sqlserver, sqlserverexpress, localdb, o por defecto
-        repositorio = RepositorioLecturaSqlServer(proveedor_conexion)
-    
-    politica_tablas = PoliticaTablasProhibidas()
-    
-    return ServicioCrud(repositorio, politica_tablas)
 
 
 @router.get("/{tabla}")
@@ -94,7 +59,7 @@ async def listar(
         )
         
         # OBTENER SERVICIO (equivalente a inyección de dependencias)
-        servicio = _obtener_servicio_crud()
+        servicio = crear_servicio_crud()
         
         # DELEGACIÓN AL SERVICIO (aplicando SRP y DIP)
         filas = await servicio.listar(tabla, esquema, limite)
@@ -223,7 +188,7 @@ async def obtener_por_clave(
         )
         
         # OBTENER SERVICIO
-        servicio = _obtener_servicio_crud()
+        servicio = crear_servicio_crud()
         
         # DELEGACIÓN AL SERVICIO
         filas = await servicio.obtener_por_clave(tabla, nombre_clave, valor, esquema)
@@ -343,7 +308,7 @@ async def crear(
             )
         
         # OBTENER SERVICIO
-        servicio = _obtener_servicio_crud()
+        servicio = crear_servicio_crud()
         
         # DELEGACIÓN AL SERVICIO
         creado = await servicio.crear(tabla, datos_entidad, esquema, campos_encriptar)
@@ -451,7 +416,7 @@ async def actualizar(
             )
         
         # OBTENER SERVICIO
-        servicio = _obtener_servicio_crud()
+        servicio = crear_servicio_crud()
         
         # DELEGACIÓN AL SERVICIO
         filas_afectadas = await servicio.actualizar(
@@ -561,7 +526,7 @@ async def eliminar(
         )
         
         # OBTENER SERVICIO
-        servicio = _obtener_servicio_crud()
+        servicio = crear_servicio_crud()
         
         # DELEGACIÓN AL SERVICIO
         filas_eliminadas = await servicio.eliminar(tabla, nombre_clave, valor_clave, esquema)
@@ -668,7 +633,7 @@ async def verificar_contrasena(
         )
         
         # OBTENER SERVICIO
-        servicio = _obtener_servicio_crud()
+        servicio = crear_servicio_crud()
         
         # DELEGACIÓN AL SERVICIO
         codigo, mensaje = await servicio.verificar_contrasena(
