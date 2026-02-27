@@ -24,41 +24,68 @@ from servicios.abstracciones.i_proveedor_conexion import IProveedorConexion
 from servicios.utilidades.encriptacion_bcrypt import encriptar
 
 
+# =========================================================================
+# ENGINE SINGLETON — Se crea UNA sola vez para toda la aplicacion.
+# Equivalente a: builder.Services.AddDbContext<>() en C# (singleton).
+# Crear un engine por request es costoso (~20-30ms) porque inicializa
+# el pool de conexiones, el driver asyncpg, etc.
+# =========================================================================
+_engine_singleton: AsyncEngine | None = None
+
+# Cache de tipos de columna para evitar queries repetidos a information_schema.
+# Clave: "esquema.tabla.columna" → Valor: tipo (ej: "integer", "varchar")
+_cache_tipos_columna: dict[str, str | None] = {}
+
+
 class RepositorioLecturaPostgreSQL(IRepositorioLecturaTabla):
     """
     Implementación del repositorio para PostgreSQL.
-    
+
     Usa SQLAlchemy async con asyncpg para conexiones asíncronas.
     Detecta tipos de columnas automáticamente via information_schema.
     """
-    
+
     def __init__(self, proveedor_conexion: IProveedorConexion):
         if proveedor_conexion is None:
             raise ValueError("proveedor_conexion no puede ser None")
-        
+
         self._proveedor_conexion = proveedor_conexion
-        self._engine: AsyncEngine | None = None
-    
+
     async def _obtener_engine(self) -> AsyncEngine:
-        """Obtiene o crea el engine de SQLAlchemy."""
-        if self._engine is None:
+        """Obtiene o crea el engine singleton de SQLAlchemy con pool configurado."""
+        global _engine_singleton
+        if _engine_singleton is None:
             cadena = self._proveedor_conexion.obtener_cadena_conexion()
-            self._engine = create_async_engine(cadena, echo=False)
-        return self._engine
+            _engine_singleton = create_async_engine(
+                cadena,
+                echo=False,
+                # Pool de conexiones: mantiene conexiones abiertas y las reutiliza.
+                pool_size=5,          # Conexiones permanentes en el pool
+                max_overflow=10,      # Conexiones extras si el pool esta lleno
+                pool_recycle=1800,    # Reciclar conexiones cada 30 min
+                pool_pre_ping=True,   # Verificar que la conexion siga viva antes de usarla
+            )
+        return _engine_singleton
     
     # =========================================================================
     # DETECCIÓN DE TIPOS
     # =========================================================================
     
     async def _detectar_tipo_columna(
-        self, 
-        nombre_tabla: str, 
-        esquema: str, 
+        self,
+        nombre_tabla: str,
+        esquema: str,
         nombre_columna: str
     ) -> str | None:
         """
         Detecta el tipo de una columna consultando information_schema.
+        Usa cache en memoria para evitar queries repetidos (el tipo de columna no cambia).
         """
+        # Buscar en cache primero
+        clave_cache = f"{esquema}.{nombre_tabla}.{nombre_columna}"
+        if clave_cache in _cache_tipos_columna:
+            return _cache_tipos_columna[clave_cache]
+
         sql = text("""
             SELECT data_type, udt_name
             FROM information_schema.columns
@@ -66,7 +93,7 @@ class RepositorioLecturaPostgreSQL(IRepositorioLecturaTabla):
             AND table_name = :tabla
             AND column_name = :columna
         """)
-        
+
         try:
             engine = await self._obtener_engine()
             async with engine.connect() as conn:
@@ -76,7 +103,10 @@ class RepositorioLecturaPostgreSQL(IRepositorioLecturaTabla):
                     "columna": nombre_columna
                 })
                 row = result.fetchone()
-                return row[0].lower() if row else None
+                tipo = row[0].lower() if row else None
+                # Guardar en cache para futuras llamadas
+                _cache_tipos_columna[clave_cache] = tipo
+                return tipo
         except Exception as ex:
             print(f"Advertencia: No se pudo detectar tipo de {nombre_columna}: {ex}")
             return None
